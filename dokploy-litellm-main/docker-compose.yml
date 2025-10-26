@@ -1,0 +1,32 @@
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    #########################################
+    ## Mount a file volume in Dokploy mapped to /app/config.yaml ##
+    volumes:
+      - ../files/litellm-config.yaml:/app/config.yaml
+    # The below two are my suggestion
+    command:
+     - "--config=/app/config.yaml"
+     - "--port=${PROXY_PORT}"
+     - "--num_workers=${NUM_WORKERS}"
+    ##############################################
+    networks:
+      - dokploy-network
+    expose:
+      - 4000
+    env_file:
+      - .env
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${HASH}.entrypoints=websecure"
+      - "traefik.http.routers.${HASH}.tls.certResolver=letsencrypt"
+      - "traefik.http.routers.${HASH}.rule=Host(`${PROXY_HOST}`)"
+      - "traefik.http.services.${HASH}.loadbalancer.server.port=${PROXY_PORT}"
+
+  
+networks:
+  dokploy-network:
+    external: true
